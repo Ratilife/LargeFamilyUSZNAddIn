@@ -83,14 +83,18 @@ namespace LargeFamilyUSZNAddIn.forms
         private void btNumberMask_Click(object sender, EventArgs e)
         {
             DataSampling ds = new DataSampling();
-            List<string> cellTexts = new List<string>();
+            List<string> cellTexts = new List<string>(); 
+            cellTexts = we.givenRangesList( txtSamplingRangeOne.Text);
             var recognizedNumbers = ds.FindNumbersByCustomPattern(cellTexts, tbMask.Text);
+
+
+            // разместить данные на листе Эксель
+            we.FillCells(tbWhereNumber.Text, recognizedNumbers);
         }
 
 
 
-        #endregion
 
-        
+        #endregion
     }
 }
