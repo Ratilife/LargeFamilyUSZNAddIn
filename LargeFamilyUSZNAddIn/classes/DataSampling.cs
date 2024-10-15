@@ -53,36 +53,7 @@ namespace LargeFamilyUSZNAddIn.classes
         #endregion
 
         #region ВыборкаЧисла
-        public List<string> FindNumbersByCustomPattern3(List<string> texts, string mask)
-        {
-            // Преобразование маски в регулярное выражение
-            string pattern = ConvertMaskToRegex(mask);
-            var regex = new Regex(pattern);
-
-            // Создание списка для результатов
-            var results = new List<string>();
-
-            // Итерация по текстам
-            foreach (var text in texts)
-            {
-                // Пропускаем пустые строки
-                if (string.IsNullOrEmpty(text))
-                {
-                    results.Add(text);
-                    //continue; // Переход к следующему элементу
-                }
-
-                // Находим все совпадения
-                var matches = regex.Matches(text);
-                foreach (Match match in matches)
-                {
-                    results.Add(match.Value);
-                }
-            }
-
-            return results;
-        }
-
+       
         public List<string> FindNumbersByCustomPattern(List<string> texts, string mask)
         {
             //Преобразование маски в регулярное выражение:
@@ -121,6 +92,57 @@ namespace LargeFamilyUSZNAddIn.classes
                 //.Replace("П", @"\p{L}"); // Заменяем П на \p{L} (буква)
             return regexPattern;
         }
+
+        public List<string> TransformByMask(List<string> dataList, string mask)
+        {
+            var result = new List<string>();
+
+            // Итерируем по каждому элементу списка
+            foreach (var data in dataList)
+            {
+                // Удаляем все символы, кроме цифр
+                string numericData = new string(data.Where(char.IsDigit).ToArray());
+
+                // Если длина числовых данных меньше, чем длина маски, пропускаем этот элемент
+                if (numericData.Length < mask.Count(c => c == '#'))
+                {
+                    result.Add(data); // Добавляем исходное значение без изменений
+                    continue;
+                }
+
+                // Применяем маску к числовым данным
+                string transformedData = ApplyMask(numericData, mask);
+
+                // Добавляем преобразованные данные в результат
+                result.Add(transformedData);
+            }
+
+            return result;
+        }
+
+        // Метод для применения маски к строке с цифрами
+        private string ApplyMask(string numericData, string mask)
+        {
+            var maskedData = new System.Text.StringBuilder();
+            int dataIndex = 0;
+
+            // Проходим по символам маски
+            foreach (var maskChar in mask)
+            {
+                if (maskChar == '#') // Если в маске символ '#', заменяем его цифрой
+                {
+                    maskedData.Append(numericData[dataIndex]);
+                    dataIndex++;
+                }
+                else // Если это любой другой символ (разделитель), добавляем его как есть
+                {
+                    maskedData.Append(maskChar);
+                }
+            }
+
+            return maskedData.ToString();
+        }
+
 
         #endregion
 

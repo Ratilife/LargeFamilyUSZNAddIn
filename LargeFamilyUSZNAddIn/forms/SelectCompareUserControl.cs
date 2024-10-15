@@ -1,4 +1,5 @@
-﻿using LargeFamilyUSZNAddIn.classes;
+﻿using DocumentFormat.OpenXml.Office2021.DocumentTasks;
+using LargeFamilyUSZNAddIn.classes;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -21,7 +22,8 @@ namespace LargeFamilyUSZNAddIn.forms
             txtSamplingRangeTwo.Enabled = false;
             btRangeTwo.Enabled = false;
             btFIO.Enabled = false;  // Убрать, когда будет прописан функционал
-            
+            // установить значение по умолчанию
+            cbTypeSelection.SelectedItem = cbTypeSelection.Items[0];
         }
 
         #region ВыборкаДиапазон
@@ -88,8 +90,17 @@ namespace LargeFamilyUSZNAddIn.forms
             var recognizedNumbers = ds.FindNumbersByCustomPattern(cellTexts, tbMask.Text);
 
 
-            // разместить данные на листе Эксель
-            we.FillCells(tbWhereNumber.Text, recognizedNumbers);
+            if (tbChangeMask.Text == string.Empty)
+            {
+                // разместить данные на листе Эксель
+                we.FillCells(tbWhereNumber.Text, recognizedNumbers);
+            }
+            else 
+            {
+                List<string> transformedList =ds.TransformByMask(recognizedNumbers, tbChangeMask.Text);
+                we.FillCells(tbWhereNumber.Text, transformedList);
+            }
+            
         }
 
 
