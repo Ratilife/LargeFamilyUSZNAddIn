@@ -25,6 +25,25 @@ namespace LargeFamilyUSZNAddIn.classes
         #region ВыборкаОбщая
 
         // Метод для загрузки активной книги Excel в ClosedXML
+        /**
+        * Метод LoadActiveWorkbook загружает активную книгу Excel в формате .xlsx для работы с ней через библиотеку ClosedXML.
+        * 
+        * Основные шаги метода:
+        * 1. Попытка получить текущий экземпляр приложения Excel через Globals.ThisAddIn.Application.
+        *    - Если Excel не открыт, выбрасывается COMException, и выводится сообщение об ошибке.
+        * 2. Проверка наличия активной книги:
+        *    - Если активная книга отсутствует (нет открытых книг в Excel), метод завершает выполнение с сообщением "Нет активной книги".
+        * 3. Временное сохранение активной книги как .xlsx файл:
+        *    - Для этого создается временный файл в директории Temp (системная временная директория), используя метод `SaveCopyAs`.
+        * 4. Загрузка временного файла в объект XLWorkbook библиотеки ClosedXML:
+        *    - Это позволяет работать с книгой Excel через функционал библиотеки ClosedXML.
+        * 5. После успешной загрузки книга сохраняется в переменной `this.workbook`, а временный файл удаляется, чтобы не оставлять его на диске.
+        *    - Удаление происходит через метод `System.IO.File.Delete`.
+        * 
+        * Метод полезен в случаях, когда нужно работать с активной книгой Excel с использованием возможностей библиотеки ClosedXML,
+        * при этом Excel-книга временно сохраняется как файл .xlsx, чтобы можно было ее загрузить в ClosedXML для последующей обработки.
+        */
+
         private void LoadActiveWorkbook()
         {
             Excel.Application excelApp;
@@ -112,7 +131,8 @@ namespace LargeFamilyUSZNAddIn.classes
 
 
         #endregion
-
+       
+        #region ВыборкаЧисел
         public List<string> givenRangesList(string rangeAddress)
         {
             List<string> cellTexts = new List<string>();
@@ -167,11 +187,27 @@ namespace LargeFamilyUSZNAddIn.classes
                     {
                         string cellValue = cell.GetString();
 
-                        // Проверяем, что значение ячейки не пустое
-                        if (!string.IsNullOrEmpty(cellValue))
+                        var texts = new List<string>
+                        {
+                            cellValue
+                        };
+
+                        if (texts.Count > 1)
+                        {
+                            foreach (var number in texts)
+                            {
+                                cellTexts.Add(number);
+                            }
+                        }
+                        else 
                         {
                             cellTexts.Add(cellValue);
                         }
+                        // Проверяем, что значение ячейки не пустое
+                        //if (!string.IsNullOrEmpty(cellValue))
+                        //{
+                            //cellTexts.Add(null);
+                        //}
                     }
                 }
             }
@@ -183,74 +219,130 @@ namespace LargeFamilyUSZNAddIn.classes
             return cellTexts;
         }
 
-        //проверить
-        public List<string> givenRangesList2(string rangeAddress)
-        {
-            List<string> cellTexts = new List<string>();
+        
 
-            // Извлекаем имя файла и листа из диапазона
-            var rangeParts = rangeAddress.Split('!');
-
-            // Имя файла в скобках (мы их не используем)
-            string fullFileName = rangeParts[0].Replace("[", "").Replace("]", "").Trim();
-
-            // Имя листа
-            string sheetName = fullFileName.Substring(fullFileName.IndexOf(']') + 1).Trim();
-
-            // Извлекаем диапазон ячеек
-            var cellRange = rangeParts[1]; // Диапазон ячеек
-
-            // Находим лист по имени
-            var worksheet = workbook.Worksheet(sheetName);
-
-            // Получаем диапазон ячеек
-            var range = worksheet.Range(cellRange);
-
-            // Перебираем строки и ячейки в указанном диапазоне
-            foreach (var row in range.Rows())
-            {
-                foreach (var cell in row.Cells())
-                {
-                    cellTexts.Add(cell.GetString());
-                }
-            }
-
-            return cellTexts;
-        }
-
-        //TODO переписать метод  
+        /**
+        * Метод FillCells предназначен для заполнения ячеек на листе Excel данными из списка.
+        * 
+        * Описание работы метода:
+        * 1. Метод принимает два параметра:
+        *    - startCellAddress: строка, содержащая адрес начальной ячейки, а также имя файла и листа, например: "[Файл.xlsx]'Лист1'$A$1".
+        *    - dataList: список строк, содержащий данные для записи в ячейки.
+        * 
+        * 2. В начале метод пытается получить активное приложение Excel через объект Globals.ThisAddIn.Application.
+        *    В случае, если Excel не запущен, возникает COMException, и пользователю выводится сообщение об ошибке.
+        * 
+        * 3. Далее происходит разбор адреса startCellAddress:
+        *    - Извлекается имя файла и листа из строки.
+        *    - Если имя файла не указано или указано как "Книга1" (несохраненная книга), метод работает с активной книгой. Если активной книги нет, выводится сообщение об ошибке.
+        *    - Если указано имя файла, метод ищет его среди открытых книг. Если нужная книга не найдена, выводится сообщение об ошибке.
+        * 
+        * 4. После этого метод ищет указанный лист в выбранной книге.
+        *    Если лист с указанным именем не найден, выводится сообщение об ошибке.
+        * 
+        * 5. Метод находит начальную ячейку на листе, начиная с которой будут записываться данные.
+        *    Из адреса ячейки извлекаются номер строки и номер столбца.
+        * 
+        * 6. Далее происходит запись данных из списка dataList в соответствующие ячейки.
+        *    Для каждой строки списка dataList метод последовательно находит нужную ячейку и записывает в нее значение.
+        * 
+        * 7. Сохранение файла в методе не выполняется, так как это должен решить пользователь.
+        *    Метод предназначен только для записи данных в открытые книги.
+        */
         public void FillCells(string startCellAddress, List<string> dataList)
         {
+            Excel.Application excelApp;
+            Excel.Workbook targetWorkbook = null;
+
+            try
+            {
+                // Получаем текущий экземпляр приложения Excel
+                excelApp = Globals.ThisAddIn.Application;
+            }
+            catch (COMException)
+            {
+                MessageBox.Show("Excel не открыт");
+                return;
+            }
+
             // Извлекаем имя файла и листа из диапазона
             var fileNameAndSheet = startCellAddress.Split(new[] { ']' }, 2);
             if (fileNameAndSheet.Length < 2)
             {
                 MessageBox.Show("Некорректный адрес диапазона. Убедитесь, что включена часть с диапазоном.");
+                return;
             }
 
             // Имя файла
             string fullFileName = fileNameAndSheet[0].Replace("[", "").Trim();
-
             // Имя листа
             string sheetName = fileNameAndSheet[1].Split('\'')[1].Trim();
+            // Адрес ячейки
+            string cellRange = fileNameAndSheet[1].Split('\'')[2].Trim();
 
-            // Извлекаем диапазон ячеек
-            var cellRange = fileNameAndSheet[1].Split('\'')[2].Trim(); // Диапазон ячеек
-            
-            var worksheet = workbook.Worksheet(sheetName); // Или измените на нужный лист
+            // Проверяем, указан ли файл
+            if (string.IsNullOrEmpty(fullFileName) || fullFileName.Equals("Книга1", StringComparison.OrdinalIgnoreCase))
+            {
+                // Если файл не указан или указан как "Книга1", считаем его активной книгой
+                targetWorkbook = excelApp.ActiveWorkbook;
+                if (targetWorkbook == null)
+                {
+                    MessageBox.Show("Нет активной книги.");
+                    return;
+                }
+            }
+            else
+            {
+                // Ищем среди открытых книг указанную
+                foreach (Excel.Workbook wb in excelApp.Workbooks)
+                {
+                    if (wb.Name.Equals(fullFileName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        targetWorkbook = wb;
+                        break;
+                    }
+                }
 
-            // Находим ячейку, с которой начинаем
-            var startCell = worksheet.Cell(cellRange);
+                if (targetWorkbook == null)
+                {
+                    MessageBox.Show($"Файл '{fullFileName}' не найден среди открытых книг.");
+                    return;
+                }
+            }
 
-            int startRow = startCell.Address.RowNumber; // Получаем номер строки
-            int startColumn = startCell.Address.ColumnNumber; // Получаем номер столбца
+            // Получаем лист по имени
+            Excel.Worksheet worksheet = null;
+            foreach (Excel.Worksheet sheet in targetWorkbook.Sheets)
+            {
+                if (sheet.Name.Equals(sheetName, StringComparison.OrdinalIgnoreCase))
+                {
+                    worksheet = sheet;
+                    break;
+                }
+            }
+
+            if (worksheet == null)
+            {
+                MessageBox.Show($"Лист с именем '{sheetName}' не найден.");
+                return;
+            }
+
+            // Находим начальную ячейку
+            Excel.Range startCell = worksheet.Range[cellRange];
+            int startRow = startCell.Row;
+            int startColumn = startCell.Column;
 
             // Заполняем ячейки данными из списка
             for (int i = 0; i < dataList.Count; i++)
             {
-                var cell = worksheet.Cell(startRow + i, startColumn); // Находим нужную ячейку
-                cell.Value = dataList[i]; // Заполняем ячейку значением из списка
+                Excel.Range cell = worksheet.Cells[startRow + i, startColumn];
+                cell.Value = dataList[i];
             }
+
+            // Сохранять файл не нужно, так как пользователь сам решает, сохранять или нет
         }
+       
+        #endregion
+
     }
 }

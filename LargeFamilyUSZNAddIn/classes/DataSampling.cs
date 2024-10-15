@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DocumentFormat.OpenXml.Spreadsheet;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -52,6 +53,35 @@ namespace LargeFamilyUSZNAddIn.classes
         #endregion
 
         #region ВыборкаЧисла
+        public List<string> FindNumbersByCustomPattern3(List<string> texts, string mask)
+        {
+            // Преобразование маски в регулярное выражение
+            string pattern = ConvertMaskToRegex(mask);
+            var regex = new Regex(pattern);
+
+            // Создание списка для результатов
+            var results = new List<string>();
+
+            // Итерация по текстам
+            foreach (var text in texts)
+            {
+                // Пропускаем пустые строки
+                if (string.IsNullOrEmpty(text))
+                {
+                    results.Add(text);
+                    //continue; // Переход к следующему элементу
+                }
+
+                // Находим все совпадения
+                var matches = regex.Matches(text);
+                foreach (Match match in matches)
+                {
+                    results.Add(match.Value);
+                }
+            }
+
+            return results;
+        }
 
         public List<string> FindNumbersByCustomPattern(List<string> texts, string mask)
         {
@@ -66,7 +96,12 @@ namespace LargeFamilyUSZNAddIn.classes
             //Итерация по текстам:
             foreach (var text in texts)
             {
-                var matches = regex.Matches(text);
+                //TODO проверить код 
+                if (string.IsNullOrEmpty(text)) 
+                {
+                    results.Add(text);
+                }
+                    var matches = regex.Matches(text);
                 foreach (Match match in matches)
                 {
                     results.Add(match.Value);
