@@ -69,6 +69,9 @@
             this.labSeparator = new System.Windows.Forms.Label();
             this.cbTypeSelection = new System.Windows.Forms.ComboBox();
             this.labTypeSelection = new System.Windows.Forms.Label();
+            this.butOpenForm = new System.Windows.Forms.Button();
+            this.btCompareForMatch = new System.Windows.Forms.Button();
+            this.butCompareForDifference = new System.Windows.Forms.Button();
             this.tbSelectionCompare.SuspendLayout();
             this.tabPage1.SuspendLayout();
             this.tabPage2.SuspendLayout();
@@ -294,6 +297,9 @@
             // 
             // tabPage2
             // 
+            this.tabPage2.Controls.Add(this.butCompareForDifference);
+            this.tabPage2.Controls.Add(this.btCompareForMatch);
+            this.tabPage2.Controls.Add(this.butOpenForm);
             this.tabPage2.Controls.Add(this.butСommentСell);
             this.tabPage2.Controls.Add(this.tbСommentСell);
             this.tabPage2.Controls.Add(this.labСommentСell);
@@ -474,6 +480,33 @@
             this.labTypeSelection.TabIndex = 0;
             this.labTypeSelection.Text = "Сравниваем:";
             // 
+            // butOpenForm
+            // 
+            this.butOpenForm.Location = new System.Drawing.Point(216, 337);
+            this.butOpenForm.Name = "butOpenForm";
+            this.butOpenForm.Size = new System.Drawing.Size(100, 23);
+            this.butOpenForm.TabIndex = 18;
+            this.butOpenForm.Text = "Посмотреть";
+            this.butOpenForm.UseVisualStyleBackColor = true;
+            // 
+            // btCompareForMatch
+            // 
+            this.btCompareForMatch.Location = new System.Drawing.Point(24, 339);
+            this.btCompareForMatch.Name = "btCompareForMatch";
+            this.btCompareForMatch.Size = new System.Drawing.Size(173, 23);
+            this.btCompareForMatch.TabIndex = 19;
+            this.btCompareForMatch.Text = "Сравнить на совпадение";
+            this.btCompareForMatch.UseVisualStyleBackColor = true;
+            // 
+            // butCompareForDifference
+            // 
+            this.butCompareForDifference.Location = new System.Drawing.Point(25, 369);
+            this.butCompareForDifference.Name = "butCompareForDifference";
+            this.butCompareForDifference.Size = new System.Drawing.Size(172, 23);
+            this.butCompareForDifference.TabIndex = 20;
+            this.butCompareForDifference.Text = "Сравнить на отличие";
+            this.butCompareForDifference.UseVisualStyleBackColor = true;
+            // 
             // SelectCompareUserControl
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -540,5 +573,8 @@
         private System.Windows.Forms.TextBox txMaskSearch;
         private System.Windows.Forms.Button butСommentСell;
         private System.Windows.Forms.TextBox tbСommentСell;
+        private System.Windows.Forms.Button butOpenForm;
+        private System.Windows.Forms.Button btCompareForMatch;
+        private System.Windows.Forms.Button butCompareForDifference;
     }
 }

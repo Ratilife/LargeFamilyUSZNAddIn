@@ -2,6 +2,8 @@
 using Microsoft.Office.Interop.Excel;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -44,7 +46,7 @@ namespace LargeFamilyUSZNAddIn.classes
         * при этом Excel-книга временно сохраняется как файл .xlsx, чтобы можно было ее загрузить в ClosedXML для последующей обработки.
         */
 
-        private void LoadActiveWorkbook()
+        private void LoadActiveWorkbook2()
         {
             Excel.Application excelApp;
 
@@ -71,11 +73,79 @@ namespace LargeFamilyUSZNAddIn.classes
             activeWorkbook.SaveCopyAs(tempFilePath);
 
             // Загружаем файл в ClosedXML
+            //TODO новая книга не попадает в переменную workbook, так как она не сохранена(изменить)
             this.workbook = new XLWorkbook(tempFilePath);
 
             // Удаляем временный файл после загрузки
             System.IO.File.Delete(tempFilePath);
         }
+
+        private void LoadActiveWorkbook()
+        {
+            Excel.Application excelApp;
+
+            try
+            {
+                // Получаем текущий экземпляр приложения Excel
+                excelApp = Globals.ThisAddIn.Application;
+            }
+            catch (COMException)
+            {
+                MessageBox.Show("Excel не открыт");
+                return;
+            }
+
+            Excel.Workbook activeWorkbook = excelApp.ActiveWorkbook;
+            if (activeWorkbook == null)
+            {
+                MessageBox.Show("Нет активной книги");
+                return;
+            }
+
+            // Получаем путь к активной книге
+            string activeWorkbookPath = activeWorkbook.FullName;
+            string extension = System.IO.Path.GetExtension(activeWorkbookPath).ToLower();
+
+            if (extension == ".xlsx")
+            {
+                // Обрабатываем файл .xlsx
+                string tempFilePath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "tempExcelFile.xlsx");
+                activeWorkbook.SaveCopyAs(tempFilePath);
+
+                // Загружаем файл в ClosedXML
+                this.workbook = new XLWorkbook(tempFilePath);
+
+                // Удаляем временный файл после загрузки
+                System.IO.File.Delete(tempFilePath);
+            }
+            else if (extension == ".csv")
+            {
+                // Обрабатываем файл .csv
+                string tempFilePath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "tempCsvFile.csv");
+                activeWorkbook.SaveCopyAs(tempFilePath);
+
+                // Загружаем CSV файл в ClosedXML
+                using (var reader = new StreamReader(tempFilePath))
+                {
+                    var csv = new CsvHelper.CsvReader(reader, CultureInfo.InvariantCulture);
+                    var dataTable = new DataTable();
+                    dataTable.Load(csv.GetRecords<dynamic>().AsDataReader());
+
+                    // Конвертируем DataTable в ClosedXML Workbook
+                    this.workbook = new XLWorkbook();
+                    var worksheet = this.workbook.Worksheets.Add("CSV Data");
+                    worksheet.Cell(1, 1).InsertTable(dataTable);
+                }
+
+                // Удаляем временный файл после загрузки
+                System.IO.File.Delete(tempFilePath);
+            }
+            else
+            {
+                MessageBox.Show("Формат файла не поддерживается");
+            }
+        }
+
 
         public string SelectRange()
         {
