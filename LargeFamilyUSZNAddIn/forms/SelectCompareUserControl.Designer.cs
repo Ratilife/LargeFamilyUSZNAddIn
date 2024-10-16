@@ -51,6 +51,9 @@
             this.lblWhereFIO = new System.Windows.Forms.Label();
             this.btFIO = new System.Windows.Forms.Button();
             this.tabPage2 = new System.Windows.Forms.TabPage();
+            this.butCompareForDifference = new System.Windows.Forms.Button();
+            this.btCompareForMatch = new System.Windows.Forms.Button();
+            this.butOpenForm = new System.Windows.Forms.Button();
             this.butСommentСell = new System.Windows.Forms.Button();
             this.tbСommentСell = new System.Windows.Forms.TextBox();
             this.labСommentСell = new System.Windows.Forms.Label();
@@ -69,9 +72,7 @@
             this.labSeparator = new System.Windows.Forms.Label();
             this.cbTypeSelection = new System.Windows.Forms.ComboBox();
             this.labTypeSelection = new System.Windows.Forms.Label();
-            this.butOpenForm = new System.Windows.Forms.Button();
-            this.btCompareForMatch = new System.Windows.Forms.Button();
-            this.butCompareForDifference = new System.Windows.Forms.Button();
+            this.chbSeparator = new System.Windows.Forms.CheckBox();
             this.tbSelectionCompare.SuspendLayout();
             this.tabPage1.SuspendLayout();
             this.tabPage2.SuspendLayout();
@@ -151,6 +152,7 @@
             // 
             // tabPage1
             // 
+            this.tabPage1.Controls.Add(this.chbSeparator);
             this.tabPage1.Controls.Add(this.label2);
             this.tabPage1.Controls.Add(this.tbChangeMask);
             this.tabPage1.Controls.Add(this.lbTextChange);
@@ -200,7 +202,7 @@
             // 
             // btNumberMask
             // 
-            this.btNumberMask.Location = new System.Drawing.Point(20, 209);
+            this.btNumberMask.Location = new System.Drawing.Point(20, 241);
             this.btNumberMask.Name = "btNumberMask";
             this.btNumberMask.Size = new System.Drawing.Size(140, 23);
             this.btNumberMask.TabIndex = 24;
@@ -210,7 +212,7 @@
             // 
             // btSelectRangeNum
             // 
-            this.btSelectRangeNum.Location = new System.Drawing.Point(300, 169);
+            this.btSelectRangeNum.Location = new System.Drawing.Point(300, 201);
             this.btSelectRangeNum.Name = "btSelectRangeNum";
             this.btSelectRangeNum.Size = new System.Drawing.Size(28, 23);
             this.btSelectRangeNum.TabIndex = 23;
@@ -220,7 +222,7 @@
             // 
             // tbWhereNumber
             // 
-            this.tbWhereNumber.Location = new System.Drawing.Point(205, 171);
+            this.tbWhereNumber.Location = new System.Drawing.Point(205, 203);
             this.tbWhereNumber.Name = "tbWhereNumber";
             this.tbWhereNumber.Size = new System.Drawing.Size(82, 20);
             this.tbWhereNumber.TabIndex = 22;
@@ -228,7 +230,7 @@
             // lblWhereNumber
             // 
             this.lblWhereNumber.AutoSize = true;
-            this.lblWhereNumber.Location = new System.Drawing.Point(17, 178);
+            this.lblWhereNumber.Location = new System.Drawing.Point(20, 206);
             this.lblWhereNumber.Name = "lblWhereNumber";
             this.lblWhereNumber.Size = new System.Drawing.Size(93, 13);
             this.lblWhereNumber.TabIndex = 21;
@@ -325,6 +327,34 @@
             this.tabPage2.TabIndex = 1;
             this.tabPage2.Text = "Сравнение";
             this.tabPage2.UseVisualStyleBackColor = true;
+            // 
+            // butCompareForDifference
+            // 
+            this.butCompareForDifference.Location = new System.Drawing.Point(25, 369);
+            this.butCompareForDifference.Name = "butCompareForDifference";
+            this.butCompareForDifference.Size = new System.Drawing.Size(172, 23);
+            this.butCompareForDifference.TabIndex = 20;
+            this.butCompareForDifference.Text = "Сравнить на отличие";
+            this.butCompareForDifference.UseVisualStyleBackColor = true;
+            // 
+            // btCompareForMatch
+            // 
+            this.btCompareForMatch.Location = new System.Drawing.Point(24, 339);
+            this.btCompareForMatch.Name = "btCompareForMatch";
+            this.btCompareForMatch.Size = new System.Drawing.Size(173, 23);
+            this.btCompareForMatch.TabIndex = 19;
+            this.btCompareForMatch.Text = "Сравнить на совпадение";
+            this.btCompareForMatch.UseVisualStyleBackColor = true;
+            this.btCompareForMatch.Click += new System.EventHandler(this.btCompareForMatch_Click);
+            // 
+            // butOpenForm
+            // 
+            this.butOpenForm.Location = new System.Drawing.Point(216, 337);
+            this.butOpenForm.Name = "butOpenForm";
+            this.butOpenForm.Size = new System.Drawing.Size(100, 23);
+            this.butOpenForm.TabIndex = 18;
+            this.butOpenForm.Text = "Посмотреть";
+            this.butOpenForm.UseVisualStyleBackColor = true;
             // 
             // butСommentСell
             // 
@@ -480,32 +510,15 @@
             this.labTypeSelection.TabIndex = 0;
             this.labTypeSelection.Text = "Сравниваем:";
             // 
-            // butOpenForm
+            // chbSeparator
             // 
-            this.butOpenForm.Location = new System.Drawing.Point(216, 337);
-            this.butOpenForm.Name = "butOpenForm";
-            this.butOpenForm.Size = new System.Drawing.Size(100, 23);
-            this.butOpenForm.TabIndex = 18;
-            this.butOpenForm.Text = "Посмотреть";
-            this.butOpenForm.UseVisualStyleBackColor = true;
-            // 
-            // btCompareForMatch
-            // 
-            this.btCompareForMatch.Location = new System.Drawing.Point(24, 339);
-            this.btCompareForMatch.Name = "btCompareForMatch";
-            this.btCompareForMatch.Size = new System.Drawing.Size(173, 23);
-            this.btCompareForMatch.TabIndex = 19;
-            this.btCompareForMatch.Text = "Сравнить на совпадение";
-            this.btCompareForMatch.UseVisualStyleBackColor = true;
-            // 
-            // butCompareForDifference
-            // 
-            this.butCompareForDifference.Location = new System.Drawing.Point(25, 369);
-            this.butCompareForDifference.Name = "butCompareForDifference";
-            this.butCompareForDifference.Size = new System.Drawing.Size(172, 23);
-            this.butCompareForDifference.TabIndex = 20;
-            this.butCompareForDifference.Text = "Сравнить на отличие";
-            this.butCompareForDifference.UseVisualStyleBackColor = true;
+            this.chbSeparator.AutoSize = true;
+            this.chbSeparator.Location = new System.Drawing.Point(14, 165);
+            this.chbSeparator.Name = "chbSeparator";
+            this.chbSeparator.Size = new System.Drawing.Size(326, 30);
+            this.chbSeparator.TabIndex = 29;
+            this.chbSeparator.Text = "Если в ячейке есть другие данные поместить в соседнюю \r\nячейку с права";
+            this.chbSeparator.UseVisualStyleBackColor = true;
             // 
             // SelectCompareUserControl
             // 
@@ -576,5 +589,6 @@
         private System.Windows.Forms.Button butOpenForm;
         private System.Windows.Forms.Button btCompareForMatch;
         private System.Windows.Forms.Button butCompareForDifference;
+        private System.Windows.Forms.CheckBox chbSeparator;
     }
 }

@@ -85,27 +85,64 @@ namespace LargeFamilyUSZNAddIn.forms
         private void btNumberMask_Click(object sender, EventArgs e)
         {
             DataSampling ds = new DataSampling();
-            List<string> cellTexts = new List<string>(); 
+            List<string> cellTexts = new List<string>();
+            List<string> recognizedNumbers = new List<string>();
+            List<string> matchingMaskResult = new List<string>();
+            List<string> nonMatchedResults = new List<string>();
+            
             cellTexts = we.givenRangesList( txtSamplingRangeOne.Text);
-            var recognizedNumbers = ds.FindNumbersByCustomPattern(cellTexts, tbMask.Text);
 
 
-            if (tbChangeMask.Text == string.Empty)
+
+            if (chbSeparator.Checked)
             {
-                // разместить данные на листе Эксель
-                we.FillCells(tbWhereNumber.Text, recognizedNumbers);
+                (matchingMaskResult, nonMatchedResults) = ds.FindNumbersByCustomPatternSeparator(cellTexts, tbMask.Text);
+                if (tbChangeMask.Text == string.Empty)
+                {
+                    // разместить данные на листе Эксель
+                    we.FillCells(tbWhereNumber.Text,matchingMaskResult,nonMatchedResults);
+                }
+                else
+                {
+                    List<string> transformedList = ds.TransformByMask(matchingMaskResult, tbChangeMask.Text);
+                    we.FillCells(tbWhereNumber.Text, transformedList, nonMatchedResults);
+                }
             }
-            else 
+            else
             {
-                List<string> transformedList =ds.TransformByMask(recognizedNumbers, tbChangeMask.Text);
-                we.FillCells(tbWhereNumber.Text, transformedList);
+                recognizedNumbers = ds.FindNumbersByCustomPattern(cellTexts, tbMask.Text);
+                if (tbChangeMask.Text == string.Empty)
+                {
+                    // разместить данные на листе Эксель
+                    we.FillCells(tbWhereNumber.Text, recognizedNumbers);
+                }
+                else
+                {
+                    List<string> transformedList = ds.TransformByMask(recognizedNumbers, tbChangeMask.Text);
+                    we.FillCells(tbWhereNumber.Text, transformedList);
+                }
+
             }
+
+            
             
         }
 
+        #endregion
+        #region СравнениеЧисло
+        private void btCompareForMatch_Click(object sender, EventArgs e)
+        {
+            DataSampling ds = new DataSampling();
+            Dictionary<string, string> cellTexts = new Dictionary<string, string>();
 
+            cellTexts = we.givenRangesDictionary(txtSamplingRangeOne.Text);
+            //Dictionary<string, string> recognizedNumbers = ds.FindNumbersByCustomPatternDictionary(cellTexts, txMaskSearch.Text);
+            if (tbtMaskСomparison.Text == string.Empty) 
+            {
+                //Dictionary<string, string> transformedDictionary = ds.TransformByMask(recognizedNumbers, tbtMaskСomparison.Text);
+            }
 
-
+        }
         #endregion
     }
 }
