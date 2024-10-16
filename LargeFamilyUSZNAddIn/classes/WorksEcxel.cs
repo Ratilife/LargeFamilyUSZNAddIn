@@ -10,6 +10,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Excel = Microsoft.Office.Interop.Excel;
+using CsvHelper;
+
 
 
 namespace LargeFamilyUSZNAddIn.classes
@@ -27,6 +29,7 @@ namespace LargeFamilyUSZNAddIn.classes
         #region ВыборкаОбщая
 
         // Метод для загрузки активной книги Excel в ClosedXML
+        // возможно удалить
         /**
         * Метод LoadActiveWorkbook загружает активную книгу Excel в формате .xlsx для работы с ней через библиотеку ClosedXML.
         * 
@@ -124,12 +127,30 @@ namespace LargeFamilyUSZNAddIn.classes
                 string tempFilePath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "tempCsvFile.csv");
                 activeWorkbook.SaveCopyAs(tempFilePath);
 
-                // Загружаем CSV файл в ClosedXML
+                // Загружаем CSV файл и парсим его в DataTable
                 using (var reader = new StreamReader(tempFilePath))
+                using (var csv = new CsvReader(reader, CultureInfo.InvariantCulture))
                 {
-                    var csv = new CsvHelper.CsvReader(reader, CultureInfo.InvariantCulture);
-                    var dataTable = new DataTable();
-                    dataTable.Load(csv.GetRecords<dynamic>().AsDataReader());
+                    var dataTable = new System.Data.DataTable();  // Явно указываем использование System.Data.DataTable
+
+                    // Чтение CSV заголовков для создания колонок в DataTable
+                    csv.Read();
+                    csv.ReadHeader();
+                    foreach (var header in csv.HeaderRecord)
+                    {
+                        dataTable.Columns.Add(header);
+                    }
+
+                    // Чтение строк CSV и добавление их в DataTable
+                    while (csv.Read())
+                    {
+                        var row = dataTable.NewRow();
+                        foreach (var header in csv.HeaderRecord)
+                        {
+                            row[header] = csv.GetField(header);
+                        }
+                        dataTable.Rows.Add(row);
+                    }
 
                     // Конвертируем DataTable в ClosedXML Workbook
                     this.workbook = new XLWorkbook();
