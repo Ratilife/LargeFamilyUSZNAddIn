@@ -84,6 +84,7 @@ namespace LargeFamilyUSZNAddIn.forms
 
         private void btNumberMask_Click(object sender, EventArgs e)
         {
+            
             DataSampling ds = new DataSampling();
             List<string> cellTexts = new List<string>();
             List<string> recognizedNumbers = new List<string>();
@@ -122,25 +123,31 @@ namespace LargeFamilyUSZNAddIn.forms
                     we.FillCells(tbWhereNumber.Text, transformedList);
                 }
 
-            }
-
-            
-            
+            }  
+           
         }
 
         #endregion
         #region СравнениеЧисло
         private void btCompareForMatch_Click(object sender, EventArgs e)
         {
+            
             DataSampling ds = new DataSampling();
-            Dictionary<string, string> cellTexts = new Dictionary<string, string>();
-
-            cellTexts = we.givenRangesDictionary(txtSamplingRangeOne.Text);
-            //Dictionary<string, string> recognizedNumbers = ds.FindNumbersByCustomPatternDictionary(cellTexts, txMaskSearch.Text);
-            if (tbtMaskСomparison.Text == string.Empty) 
+            Dictionary<string, string> cellTextsA = new Dictionary<string, string>();
+            Dictionary<string, string> cellTextsB = new Dictionary<string, string>();
+            //выборка данных для сравнения
+            cellTextsA = we.givenRangesDictionary(txtSamplingRangeOne.Text);
+            cellTextsB = we.givenRangesDictionary(txtSamplingRangeTwo.Text);
+            //обработка выбранных данных
+            Dictionary<string, List<string>> recognizedNumbersA = ds.FindNumbersByCustomPatternDictionary(cellTextsA, tbMaskSelection.Text);
+            Dictionary<string, List<string>> recognizedNumbersB = ds.FindNumbersByCustomPatternDictionary(cellTextsB, txMaskSearch.Text);
+            //Проверяем нужно менять даные перед сравнением
+            if (tbtMaskСomparison.Text != string.Empty)
             {
-                //Dictionary<string, string> transformedDictionary = ds.TransformByMask(recognizedNumbers, tbtMaskСomparison.Text);
+                Dictionary<string, string> transformedDictionary = ds.TransformByMaskDictionary(recognizedNumbersB, tbtMaskСomparison.Text);
             }
+            
+            //Сравнение данных
 
         }
         #endregion

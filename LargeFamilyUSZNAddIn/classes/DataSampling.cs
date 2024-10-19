@@ -277,7 +277,7 @@ namespace LargeFamilyUSZNAddIn.classes
         }
 
 
-        public Dictionary<string, string> TransformByMask(Dictionary<string, string> dataDict, string mask)
+        public Dictionary<string, string> TransformByMaskDictionary(Dictionary<string, List<string>> dataDict, string mask)
         {
             var result = new Dictionary<string, string>();
 
@@ -285,28 +285,86 @@ namespace LargeFamilyUSZNAddIn.classes
             foreach (var kvp in dataDict)
             {
                 string key = kvp.Key;      // Исходное значение (ключ)
-                string data = kvp.Value;   // Данные для преобразования (значение)
+                List<string> data = kvp.Value;   // Данные для преобразования (значение)
 
                 // Удаляем все символы, кроме цифр
-                string numericData = new string(data.Where(char.IsDigit).ToArray());
-
-                // Если длина числовых данных меньше, чем длина маски, пропускаем этот элемент
-                if (numericData.Length < mask.Count(c => c == '#'))
+                List<string> numericData = data
+                    .Select(s => new string(s.Where(char.IsDigit).ToArray()))
+                    .ToList();
+                // Проверяем, если хотя бы одно из числовых значений удовлетворяет длине маски
+                foreach (var num in numericData)
                 {
-                    result.Add(key, data); // Добавляем исходное значение без изменений как ключ и значение
-                    continue;
+                    // Если длина числовых данных меньше, чем длина маски, пропускаем этот элемент
+                    if (num.Length >= mask.Count(c => c == '#'))
+                    {
+                        // Применяем маску к числовым данным
+                        string transformedData = ApplyMask(num, mask);
+
+                        // Если в результате получилось значение, добавляем его в результат
+                        result[key] = transformedData;
+                        break;  // Прерываем цикл, если нашли подходящее значение
+                    }
                 }
-
-                // Применяем маску к числовым данным
-                string transformedData = ApplyMask(numericData, mask);
-
-                // Добавляем исходное значение и преобразованные данные в результат
-                result.Add(key, transformedData);
             }
 
             return result;
         }
 
+        // Основной метод, который сравнивает два словаря по маске и возвращает список ключей с совпадающими значениями.
+        public List<string> CompareDictionaries(Dictionary<string, List<string>> dict1, Dictionary<string, List<string>> dict2, string mask)
+        {
+            List<string> result = new List<string>();
+
+            foreach (var kvp1 in dict1)
+            {
+                if (dict2.TryGetValue(kvp1.Key, out List<string> value2))
+                {
+                    List<string> values1Processed = ApplyMaskList(kvp1.Value, mask);
+                    List<string> values2Processed = ApplyMaskList(value2, mask);
+
+                    if (CompareValueLists(values1Processed, values2Processed))
+                    {
+                        result.Add(kvp1.Key);
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        // Метод для сравнения двух списков после применения маски.
+        private bool CompareValueLists(List<string> values1, List<string> values2)
+        {
+            foreach (var val1 in values1)
+            {
+                if (values2.Any(val2 => val1 == val2))
+                {
+                    return true; // Совпадение найдено.
+                }
+            }
+
+            return false; // Нет совпадений.
+        }
+
+        //TODO Проверить код
+        // Метод для применения маски к каждому значению списка.
+        private List<string> ApplyMaskList(List<string> values, string mask)
+        {
+            return values
+                .Select(value => ExtractByMask(value, mask))
+                .ToList();
+        }
+
+        // Метод для извлечения части строки на основе маски.
+        private string ExtractByMask(string value, string mask)
+        {
+            // Пример использования маски: здесь можно изменить реализацию для более сложной логики.
+            // Например, маска может указывать, какие символы оставить или какие позиции учитывать.
+            // Сейчас предполагается, что маска просто фильтрует строки на основе содержания.
+            // (например, возвращает строку, если она содержит определенные символы из маски).
+
+            return new string(value.Where(c => mask.Contains(c)).ToArray());
+        }
 
         #endregion
     }

@@ -19,39 +19,21 @@ namespace LargeFamilyUSZNAddIn.classes
     internal class WorksEcxel
     {
         private IXLWorkbook workbook;
+        private // Создаем список для хранения загруженных книг
+        Dictionary <string, XLWorkbook> workbooksDictionary = new Dictionary<string, XLWorkbook>();
+
         public WorksEcxel() 
         {
-            // Загружаем активную книгу Excel
-            this.LoadActiveWorkbook();
+            
         }
 
 
         #region ВыборкаОбщая
 
-        
-        // возможно удалить
-        /**
-        * Метод LoadActiveWorkbook загружает активную книгу Excel в формате .xlsx для работы с ней через библиотеку ClosedXML.
-        * 
-        * Основные шаги метода:
-        * 1. Попытка получить текущий экземпляр приложения Excel через Globals.ThisAddIn.Application.
-        *    - Если Excel не открыт, выбрасывается COMException, и выводится сообщение об ошибке.
-        * 2. Проверка наличия активной книги:
-        *    - Если активная книга отсутствует (нет открытых книг в Excel), метод завершает выполнение с сообщением "Нет активной книги".
-        * 3. Временное сохранение активной книги как .xlsx файл:
-        *    - Для этого создается временный файл в директории Temp (системная временная директория), используя метод `SaveCopyAs`.
-        * 4. Загрузка временного файла в объект XLWorkbook библиотеки ClosedXML:
-        *    - Это позволяет работать с книгой Excel через функционал библиотеки ClosedXML.
-        * 5. После успешной загрузки книга сохраняется в переменной `this.workbook`, а временный файл удаляется, чтобы не оставлять его на диске.
-        *    - Удаление происходит через метод `System.IO.File.Delete`.
-        * 
-        * Метод полезен в случаях, когда нужно работать с активной книгой Excel с использованием возможностей библиотеки ClosedXML,
-        * при этом Excel-книга временно сохраняется как файл .xlsx, чтобы можно было ее загрузить в ClosedXML для последующей обработки.
-        */
-
-        private void LoadActiveWorkbook2()
+        private void LoadAllOpenWorkbooks()
         {
             Excel.Application excelApp;
+            Excel.Workbooks workbooks;
 
             try
             {
@@ -64,203 +46,42 @@ namespace LargeFamilyUSZNAddIn.classes
                 return;
             }
 
-            Excel.Workbook activeWorkbook = excelApp.ActiveWorkbook;
-            if (activeWorkbook == null)
+            // Получаем все открытые книги
+            workbooks = excelApp.Workbooks;
+
+            if (workbooks.Count == 0)
             {
-                MessageBox.Show("Нет активной книги");
+                MessageBox.Show("Нет открытых книг Excel.");
                 return;
             }
 
-            // Временно сохраняем активную книгу как .xlsx файл и загружаем в ClosedXML
-            string tempFilePath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "tempExcelFile.xlsx");
-            activeWorkbook.SaveCopyAs(tempFilePath);
-
-            // Загружаем файл в ClosedXML
-            //TODO новая книга не попадает в переменную workbook, так как она не сохранена(изменить)
-            this.workbook = new XLWorkbook(tempFilePath);
-
-            // Удаляем временный файл после загрузки
-            System.IO.File.Delete(tempFilePath);
-        }
-
-        private void LoadActiveWorkbook3()
-        {
-            Excel.Application excelApp;
-
-            try
+            foreach (Excel.Workbook wb in workbooks)
             {
-                // Получаем текущий экземпляр приложения Excel
-                excelApp = Globals.ThisAddIn.Application;
-            }
-            catch (COMException)
-            {
-                MessageBox.Show("Excel не открыт");
-                return;
-            }
-
-            Excel.Workbook activeWorkbook = excelApp.ActiveWorkbook;
-            if (activeWorkbook == null)
-            {
-                MessageBox.Show("Нет активной книги");
-                return;
-            }
-
-            // Получаем путь к активной книге
-            string activeWorkbookPath = activeWorkbook.FullName;
-            string extension = System.IO.Path.GetExtension(activeWorkbookPath).ToLower();
-
-            if (extension == ".xlsx")
-            {
-                // Обрабатываем файл .xlsx
-                string tempFilePath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "tempExcelFile.xlsx");
-                activeWorkbook.SaveCopyAs(tempFilePath);
-
-                // Загружаем файл в ClosedXML
-                this.workbook = new XLWorkbook(tempFilePath);
-
-                // Удаляем временный файл после загрузки
-                System.IO.File.Delete(tempFilePath);
-            }
-            else if (extension == ".csv")
-            {
-                // Обрабатываем файл .csv
-                string tempFilePath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "tempCsvFile.csv");
-                activeWorkbook.SaveCopyAs(tempFilePath);
-
-                // Загружаем CSV файл и парсим его в DataTable
-                using (var reader = new StreamReader(tempFilePath))
-                using (var csv = new CsvReader(reader, CultureInfo.InvariantCulture))
+                try
                 {
-                    var dataTable = new System.Data.DataTable();  // Явно указываем использование System.Data.DataTable
+                    // Создаем временный файл
+                    string tempFilePath = Path.GetTempFileName();
+                    // Имя файла
+                    string fileName = wb.Name;
+                    // Сохраняем книгу во временный файл
+                    wb.SaveCopyAs(tempFilePath);
 
-                    // Чтение CSV заголовков для создания колонок в DataTable
-                    csv.Read();
-                    csv.ReadHeader();
-                    foreach (var header in csv.HeaderRecord)
+                    // Открываем временный файл в ClosedXML
+                    using (var stream = new FileStream(tempFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                     {
-                        dataTable.Columns.Add(header);
+                         var workbook = new XLWorkbook(stream);
+
+                        // Добавляем загруженный workbook в список
+                        workbooksDictionary.Add(fileName, workbook);
                     }
 
-                    // Чтение строк CSV и добавление их в DataTable
-                    while (csv.Read())
-                    {
-                        var row = dataTable.NewRow();
-                        foreach (var header in csv.HeaderRecord)
-                        {
-                            row[header] = csv.GetField(header);
-                        }
-                        dataTable.Rows.Add(row);
-                    }
-
-                    // Конвертируем DataTable в ClosedXML Workbook
-                    this.workbook = new XLWorkbook();
-                    var worksheet = this.workbook.Worksheets.Add("CSV Data");
-                    worksheet.Cell(1, 1).InsertTable(dataTable);
+                    // Удаляем временный файл
+                    File.Delete(tempFilePath);
                 }
-
-                // Удаляем временный файл после загрузки
-                System.IO.File.Delete(tempFilePath);
-            }
-            else
-            {
-                MessageBox.Show("Формат файла не поддерживается");
-            }
-        }
-
-        // Метод для загрузки активной книги Excel в ClosedXML
-        private void LoadActiveWorkbook()
-        {
-            Excel.Application excelApp;
-
-            try
-            {
-                // Получаем текущий экземпляр приложения Excel
-                excelApp = Globals.ThisAddIn.Application;
-            }
-            catch (COMException)
-            {
-                MessageBox.Show("Excel не открыт");
-                return;
-            }
-
-            Excel.Workbook activeWorkbook = excelApp.ActiveWorkbook;
-            if (activeWorkbook == null)
-            {
-                MessageBox.Show("Нет активной книги");
-                return;
-            }
-
-            // Получаем путь к активной книге
-            string activeWorkbookPath = activeWorkbook.FullName;
-            string extension = System.IO.Path.GetExtension(activeWorkbookPath).ToLower();
-            string fileNameWithoutExtension = System.IO.Path.GetFileNameWithoutExtension(activeWorkbookPath);
-
-            if (extension == ".xlsx")
-            {
-                // Обрабатываем файл .xlsx
-                string tempFilePath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "tempExcelFile.xlsx");
-                activeWorkbook.SaveCopyAs(tempFilePath);
-
-                // Загружаем файл в ClosedXML
-                this.workbook = new XLWorkbook(tempFilePath);
-
-                // Удаляем временный файл после загрузки
-                System.IO.File.Delete(tempFilePath);
-            }
-            else if (extension == ".csv")
-            {
-                // Обрабатываем файл .csv
-                string tempCsvFilePath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "tempCsvFile.csv");
-                activeWorkbook.SaveCopyAs(tempCsvFilePath);
-
-                // Создаем временный .xlsx файл
-                string tempXlsxFilePath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "tempExcelFile.xlsx");
-
-                // Загружаем CSV файл и конвертируем его в .xlsx
-                using (var reader = new StreamReader(tempCsvFilePath))
-                using (var csv = new CsvReader(reader, CultureInfo.InvariantCulture))
+                catch (Exception ex)
                 {
-                    var dataTable = new System.Data.DataTable();
-
-                    // Чтение CSV заголовков для создания колонок в DataTable
-                    csv.Read();
-                    csv.ReadHeader();
-                    foreach (var header in csv.HeaderRecord)
-                    {
-                        dataTable.Columns.Add(header);
-                    }
-
-                    // Чтение строк CSV и добавление их в DataTable
-                    while (csv.Read())
-                    {
-                        var row = dataTable.NewRow();
-                        foreach (var header in csv.HeaderRecord)
-                        {
-                            row[header] = csv.GetField(header);
-                        }
-                        dataTable.Rows.Add(row);
-                    }
-
-                    // Конвертируем DataTable в ClosedXML Workbook и создаем лист с именем файла без расширения
-                    var xlsxWorkbook = new XLWorkbook();
-                    var worksheet = xlsxWorkbook.Worksheets.Add(dataTable, fileNameWithoutExtension);
-
-                    // Сохраняем временный .xlsx файл
-                    xlsxWorkbook.SaveAs(tempXlsxFilePath);
-
-                    // Загружаем созданный .xlsx файл в this.workbook
-                    this.workbook = new XLWorkbook(tempXlsxFilePath);
+                    MessageBox.Show($"Ошибка при обработке книги {wb.Name}: {ex.Message}");
                 }
-
-                // Удаляем временный CSV файл
-                System.IO.File.Delete(tempCsvFilePath);
-
-                // Удаляем временный .xlsx файл после загрузки
-                System.IO.File.Delete(tempXlsxFilePath);
-            }
-            else
-            {
-                MessageBox.Show("Формат файла не поддерживается");
             }
         }
 
@@ -323,7 +144,9 @@ namespace LargeFamilyUSZNAddIn.classes
         #region ВыборкаЧисел
         public List<string> givenRangesList(string rangeAddress)
         {
+            LoadAllOpenWorkbooks();
             List<string> cellTexts = new List<string>();
+            
 
             // Проверяем, содержит ли строка правильный формат с диапазоном
             if (!rangeAddress.Contains("'"))
@@ -344,68 +167,92 @@ namespace LargeFamilyUSZNAddIn.classes
             // Имя файла
             string fullFileName = fileNameAndSheet[0].Replace("[", "").Trim();
 
+            // Проверка расширения файла
+            if (fullFileName.EndsWith(".csv", StringComparison.OrdinalIgnoreCase))
+            {
+                // Для файлов .csv пропускаем код, который работает с листами Excel
+                MessageBox.Show("Обработка файлов .csv на данный момент не поддерживается.");
+                return cellTexts;
+            }
+
             // Имя листа
             string sheetName = fileNameAndSheet[1].Split('\'')[1].Trim();
 
             // Извлекаем диапазон ячеек
             var cellRange = fileNameAndSheet[1].Split('\'')[2].Trim(); // Диапазон ячеек
 
-            foreach (var ws in workbook.Worksheets)
+            // Определяем worksheet как null вначале
+            //IXLWorksheet worksheet = null;
+            // Получаем все открытые книги
+            
+            if (fullFileName.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase))
             {
-                Console.WriteLine($"Лист: {ws.Name}");
-
-            }
-                // Находим лист по имени
-                var worksheet = workbook.Worksheet(sheetName);
-            if (worksheet == null)
-            {
-                MessageBox.Show($"Лист с именем '{sheetName}' не найден.");
-                return cellTexts; // Возвращаем пустой список
-            }
-
-            try
-            {
-                // Получаем диапазон ячеек
-                var range = worksheet.Range(cellRange);
-
-                // Перебираем строки и ячейки в указанном диапазоне
-                foreach (var row in range.Rows())
+                // Перебираем все книги в workbooksList
+                foreach (KeyValuePair < string, XLWorkbook > workbook in workbooksDictionary)
                 {
-                    foreach (var cell in row.Cells())
-                    {
-                        string cellValue = cell.GetString();
 
-                        var texts = new List<string>
+                    // Проверяем, совпадает ли имя файла с полным именем
+                    //if (workbook.FullPath == fullFileName) // Убедитесь, что FullPath доступен
+                    //{
+                        // Проходим по всем листам в текущей книге
+                        foreach (IXLWorksheet worksheet in workbook.Value.Worksheets)
                         {
-                            cellValue
-                        };
-
-                        if (texts.Count > 1)
-                        {
-                            foreach (var number in texts)
+                            // Проверяем, совпадает ли имя листа с заданным именем
+                            if (worksheet.Name == sheetName)
                             {
-                                cellTexts.Add(number);
+                                if (worksheet == null)
+                                {
+                                    MessageBox.Show($"Лист с именем '{sheetName}' не найден.");
+                                    return cellTexts; // Возвращаем пустой список
+                                }
+
+
+
+                                try
+                                {
+                                    // Получаем диапазон ячеек
+                                    var range = worksheet.Range(cellRange);
+
+                                    // Перебираем строки и ячейки в указанном диапазоне
+                                    foreach (var row in range.Rows())
+                                    {
+                                        foreach (var cell in row.Cells())
+                                        {
+                                            string cellValue = cell.GetString();
+
+                                            var texts = new List<string>
+                                {
+                                    cellValue
+                                };
+
+                                            if (texts.Count > 1)
+                                            {
+                                                foreach (var number in texts)
+                                                {
+                                                    cellTexts.Add(number);
+                                                }
+                                            }
+                                            else
+                                            {
+                                                cellTexts.Add(cellValue);
+                                            }
+
+                                        }
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    MessageBox.Show($"Ошибка при получении диапазона: {ex.Message}");
+                                }
                             }
                         }
-                        else 
-                        {
-                            cellTexts.Add(cellValue);
-                        }
-                        // Проверяем, что значение ячейки не пустое
-                        //if (!string.IsNullOrEmpty(cellValue))
-                        //{
-                            //cellTexts.Add(null);
-                        //}
-                    }
+                    //}
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Ошибка при получении диапазона: {ex.Message}");
-            }
-
+            } 
             return cellTexts;
         }
+
+
 
         /**
         * Метод FillCells предназначен для заполнения ячеек на листе Excel данными из списка.
@@ -661,6 +508,7 @@ namespace LargeFamilyUSZNAddIn.classes
         #region СравнениеЧисел
         public Dictionary<string, string> givenRangesDictionary(string rangeAddress)
         {
+            LoadAllOpenWorkbooks();
             // Создаем словарь для хранения результата
             Dictionary<string, string> cellDataDict = new Dictionary<string, string>();
 
@@ -683,56 +531,114 @@ namespace LargeFamilyUSZNAddIn.classes
             // Имя файла
             string fullFileName = fileNameAndSheet[0].Replace("[", "").Trim();
 
+            // Проверка расширения файла
+            if (fullFileName.EndsWith(".csv", StringComparison.OrdinalIgnoreCase))
+            {
+                // Для файлов .csv пропускаем код, который работает с листами Excel
+                MessageBox.Show("Обработка файлов .csv на данный момент не поддерживается.");
+                return cellDataDict;
+            }
+
             // Имя листа
             string sheetName = fileNameAndSheet[1].Split('\'')[1].Trim();
 
             // Извлекаем диапазон ячеек
             var cellRange = fileNameAndSheet[1].Split('\'')[2].Trim(); // Диапазон ячеек
 
-            foreach (var ws in workbook.Worksheets)
+            //получаем все открытые книги 
+            if (fullFileName.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase))
             {
-                Console.WriteLine($"Лист: {ws.Name}");
-            }
-
-            // Находим лист по имени
-            var worksheet = workbook.Worksheet(sheetName);
-            if (worksheet == null)
-            {
-                MessageBox.Show($"Лист с именем '{sheetName}' не найден.");
-                return cellDataDict; // Возвращаем пустой словарь
-            }
-
-            try
-            {
-                // Получаем диапазон ячеек
-                var range = worksheet.Range(cellRange);
-
-                // Переменная для отслеживания порядкового номера
-                int index = 1;
-
-                // Перебираем строки и ячейки в указанном диапазоне
-                foreach (var row in range.Rows())
+                foreach (KeyValuePair<string, XLWorkbook> workbook in workbooksDictionary)
                 {
-                    foreach (var cell in row.Cells())
+                    // Проходим по всем листам в текущей книге
+                    foreach (IXLWorksheet worksheet in workbook.Value.Worksheets)
                     {
-                        string cellValue = cell.GetString();
-
-                        // Проверка на наличие значений в ячейке
-                        if (!string.IsNullOrEmpty(cellValue))
+                        if (worksheet.Name == sheetName)
                         {
-                            // Формируем ключ в формате [имяФайла]'ИмяЛиста'A1(1)
-                            string key = $"[{fullFileName}]'{sheetName}'{cell.Address}(index)";
-                            cellDataDict.Add(key, cellValue);
-                            index++; // Увеличиваем индекс для каждого значения
+                            if (worksheet == null)
+                            {
+                                MessageBox.Show($"Лист с именем '{sheetName}' не найден.");
+                                return cellDataDict; // Возвращаем пустой список
+                            }
+                            try
+                            {
+                                // Получаем диапазон ячеек
+                                var range = worksheet.Range(cellRange);
+
+                                // Переменная для отслеживания порядкового номера
+                                int index = 1;
+
+                                // Перебираем строки и ячейки в указанном диапазоне
+                                foreach (var row in range.Rows())
+                                {
+                                    foreach (var cell in row.Cells())
+                                    {
+                                        string cellValue = cell.GetString();
+
+                                        // Проверка на наличие значений в ячейке
+                                        if (!string.IsNullOrEmpty(cellValue))
+                                        {
+                                            // Формируем ключ в формате [имяФайла]'ИмяЛиста'A1(1)
+                                            string key = $"[{fullFileName}]'{sheetName}'{cell.Address}(index)";
+                                            cellDataDict.Add(key, cellValue);
+                                            index++; // Увеличиваем индекс для каждого значения
+                                        }
+                                    }
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                MessageBox.Show($"Ошибка при получении диапазона: {ex.Message}");
+                            }
+
                         }
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Ошибка при получении диапазона: {ex.Message}");
-            }
+                    /*// Перебираем все книги в workbooksDictionary
+                    foreach (var ws in workbook.Worksheets)
+                    {
+                        Console.WriteLine($"Лист: {ws.Name}");
+                    }
 
+                    // Находим лист по имени
+                    var worksheet = workbook.Worksheet(sheetName);
+                    if (worksheet == null)
+                    {
+                        MessageBox.Show($"Лист с именем '{sheetName}' не найден.");
+                        return cellDataDict; // Возвращаем пустой словарь
+                    }
+
+                    try
+                    {
+                        // Получаем диапазон ячеек
+                        var range = worksheet.Range(cellRange);
+
+                        // Переменная для отслеживания порядкового номера
+                        int index = 1;
+
+                        // Перебираем строки и ячейки в указанном диапазоне
+                        foreach (var row in range.Rows())
+                        {
+                            foreach (var cell in row.Cells())
+                            {
+                                string cellValue = cell.GetString();
+
+                                // Проверка на наличие значений в ячейке
+                                if (!string.IsNullOrEmpty(cellValue))
+                                {
+                                    // Формируем ключ в формате [имяФайла]'ИмяЛиста'A1(1)
+                                    string key = $"[{fullFileName}]'{sheetName}'{cell.Address}(index)";
+                                    cellDataDict.Add(key, cellValue);
+                                    index++; // Увеличиваем индекс для каждого значения
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Ошибка при получении диапазона: {ex.Message}");
+                    }*/
+            }
             return cellDataDict; // Возвращаем заполненный словарь
         }
 
