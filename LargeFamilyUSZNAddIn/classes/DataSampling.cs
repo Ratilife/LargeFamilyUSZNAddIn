@@ -1,4 +1,5 @@
-﻿using DocumentFormat.OpenXml.Spreadsheet;
+﻿using DocumentFormat.OpenXml.Drawing.Charts;
+using DocumentFormat.OpenXml.Spreadsheet;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -96,7 +97,7 @@ namespace LargeFamilyUSZNAddIn.classes
             //Итерация по текстам:
             foreach (var text in texts)
             {
-                //TODO проверить код 
+                
                 if (string.IsNullOrEmpty(text)) 
                 {
                     results.Add(text);
@@ -234,7 +235,7 @@ namespace LargeFamilyUSZNAddIn.classes
 
         #region СравнениеЧисла
 
-        public Dictionary<string, List<string>> FindNumbersByCustomPatternDictionary(Dictionary<string, string> textsDict, string mask)
+        public Dictionary<string, string> FindNumbersByCustomPatternDictionary(Dictionary<string, string> textsDict, string mask)
         {
             // Преобразование маски в регулярное выражение:
             string pattern = ConvertMaskToRegex(mask);
@@ -243,8 +244,8 @@ namespace LargeFamilyUSZNAddIn.classes
             var regex = new Regex(pattern);
 
             // Создание словаря для результатов:
-            var resultDict = new Dictionary<string, List<string>>();
-
+            var resultDict = new Dictionary<string, string>();
+            int index = 1;
             // Итерация по элементам словаря:
             foreach (var kvp in textsDict)
             {
@@ -265,19 +266,20 @@ namespace LargeFamilyUSZNAddIn.classes
                     var matches = regex.Matches(text);
                     foreach (Match match in matches)
                     {
-                        results.Add(match.Value); // Добавляем совпадение
+                        //results.Add(match.Value); // Добавляем совпадение
+                        // Добавляем результаты в словарь с тем же ключом
+                        string key_index = $"{key}({index})";
+                        resultDict.Add(key_index , match.Value);
+                        index++;
                     }
                 }
-
-                // Добавляем результаты в словарь с тем же ключом
-                resultDict.Add(key, results);
             }
 
             return resultDict;
         }
 
-
-        public Dictionary<string, string> TransformByMaskDictionary(Dictionary<string, List<string>> dataDict, string mask)
+        
+        public Dictionary<string, string> TransformByMaskDictionary(Dictionary<string, string> dataDict, string mask)
         {
             var result = new Dictionary<string, string>();
 
@@ -285,24 +287,52 @@ namespace LargeFamilyUSZNAddIn.classes
             foreach (var kvp in dataDict)
             {
                 string key = kvp.Key;      // Исходное значение (ключ)
-                List<string> data = kvp.Value;   // Данные для преобразования (значение)
+                string data = kvp.Value;   // Данные для преобразования (значение)
 
                 // Удаляем все символы, кроме цифр
-                List<string> numericData = data
-                    .Select(s => new string(s.Where(char.IsDigit).ToArray()))
-                    .ToList();
+                string numericData = new string(data.Where(char.IsDigit).ToArray());
                 // Проверяем, если хотя бы одно из числовых значений удовлетворяет длине маски
-                foreach (var num in numericData)
+                if (numericData.Length >= mask.Count(c => c == '#'))
                 {
-                    // Если длина числовых данных меньше, чем длина маски, пропускаем этот элемент
-                    if (num.Length >= mask.Count(c => c == '#'))
-                    {
-                        // Применяем маску к числовым данным
-                        string transformedData = ApplyMask(num, mask);
+                    // Применяем маску к числовым данным
+                    string transformedData = ApplyMask(numericData, mask);
 
-                        // Если в результате получилось значение, добавляем его в результат
-                        result[key] = transformedData;
-                        break;  // Прерываем цикл, если нашли подходящее значение
+                    // Добавляем результат в словарь
+                    result[key] = transformedData;
+                }
+            }
+
+            return result;
+        }
+
+        //совпадение
+        public List<string> CompareDictionaries(Dictionary<string, string> dict1, Dictionary<string, string> dict2)
+        {
+            List<string> result = new List<string>();
+
+            // Создаем обратный словарь, где ключи - значения dict2, а значения - ключи dict2
+            Dictionary<string, List<string>> reverseDict2 = new Dictionary<string, List<string>>();
+
+            // Заполняем обратный словарь
+            foreach (var kvp2 in dict2)
+            {
+                if (!reverseDict2.ContainsKey(kvp2.Value))
+                {
+                    reverseDict2[kvp2.Value] = new List<string>();
+                }
+                reverseDict2[kvp2.Value].Add(kvp2.Key);
+            }
+
+            // Итерируем по dict1 и проверяем совпадения по значению в обратном словаре
+            foreach (var kvp1 in dict1)
+            {
+                if (reverseDict2.TryGetValue(kvp1.Value, out List<string> keys2))
+                {
+                    // Добавляем все соответствующие ключи из dict2
+                    foreach (var key2 in keys2)
+                    {
+                        result.Add(kvp1.Key);
+                        result.Add(key2);
                     }
                 }
             }
@@ -310,19 +340,88 @@ namespace LargeFamilyUSZNAddIn.classes
             return result;
         }
 
-        // Основной метод, который сравнивает два словаря по маске и возвращает список ключей с совпадающими значениями.
-        public List<string> CompareDictionaries(Dictionary<string, List<string>> dict1, Dictionary<string, List<string>> dict2, string mask)
+
+        /* на случай если работающий метод не работает правельно заменить
+        public List<string> CompareDictionaries(Dictionary<string, string> dict1, Dictionary<string, string> dict2)
         {
             List<string> result = new List<string>();
 
             foreach (var kvp1 in dict1)
             {
-                if (dict2.TryGetValue(kvp1.Key, out List<string> value2))
+                foreach (var kvp2 in dict2)
                 {
-                    List<string> values1Processed = ApplyMaskList(kvp1.Value, mask);
-                    List<string> values2Processed = ApplyMaskList(value2, mask);
+                    // Сравниваем значения словарей
+                    if (kvp1.Value == kvp2.Value)
+                    {
+                        // Добавляем ключи из обоих словарей в список
+                        result.Add(kvp1.Key);
+                        result.Add(kvp2.Key);
+                    }
+                }
+            }
 
-                    if (CompareValueLists(values1Processed, values2Processed))
+            return result;
+        }
+
+        public List<string> CompareDictionaries(Dictionary<string, string> dict1, Dictionary<string, string> dict2)
+        {
+            List<string> result = new List<string>();
+            HashSet<string> matchedKeysDict1 = new HashSet<string>();
+            HashSet<string> matchedKeysDict2 = new HashSet<string>();
+
+            // Итерируем по dict1 и dict2, чтобы найти совпадения
+            foreach (var kvp1 in dict1)
+            {
+                foreach (var kvp2 in dict2)
+                {
+                    if (kvp1.Value == kvp2.Value)
+                    {
+                        // Если найдено совпадение, запоминаем ключи
+                        matchedKeysDict1.Add(kvp1.Key);
+                        matchedKeysDict2.Add(kvp2.Key);
+                    }
+                }
+            }
+
+            // Добавляем в результат ключи из dict1, которые не были найдены в dict2
+            foreach (var kvp1 in dict1)
+            {
+                if (!matchedKeysDict1.Contains(kvp1.Key))
+                {
+                    result.Add(kvp1.Key);
+                }
+            }
+
+            // Добавляем в результат ключи из dict2, которые не были найдены в dict1
+            foreach (var kvp2 in dict2)
+            {
+                if (!matchedKeysDict2.Contains(kvp2.Key))
+                {
+                    result.Add(kvp2.Key);
+                }
+            }
+
+            return result;
+            }
+
+        */
+
+        // Основной метод, который сравнивает два словаря по маске и возвращает список ключей с совпадающими значениями.
+        public List<string> CompareDictionaries2(Dictionary<string, string> dict1, Dictionary<string, string> dict2, string mask)
+        {
+            List<string> result = new List<string>();
+
+            foreach (var kvp1 in dict1)
+            {
+                // Проверяем, есть ли ключ в dict2 и получаем его значение
+                if (dict2.TryGetValue(kvp1.Key, out string value2))
+                {
+                    // Применяем маску к значениям словарей
+                    string value1Processed = ApplyMask(kvp1.Value, mask);
+                    string value2Processed = ApplyMask(value2, mask);
+
+                    // Сравниваем обработанные строки
+                    if (value1Processed == value2Processed)
                     {
                         result.Add(kvp1.Key);
                     }
@@ -332,6 +431,47 @@ namespace LargeFamilyUSZNAddIn.classes
             return result;
         }
 
+        public List<string> CompareDictionariesDifference(Dictionary<string, string> dict1, Dictionary<string, string> dict2)
+        {
+            List<string> result = new List<string>();
+
+            // Создаем обратный словарь, где ключи - значения dict2, а значения - ключи dict2
+            Dictionary<string, List<string>> reverseDict2 = new Dictionary<string, List<string>>();
+
+            // Заполняем обратный словарь
+            foreach (var kvp2 in dict2)
+            {
+                if (!reverseDict2.ContainsKey(kvp2.Value))
+                {
+                    reverseDict2[kvp2.Value] = new List<string>();
+                }
+                reverseDict2[kvp2.Value].Add(kvp2.Key);
+            }
+
+            // Итерируем по dict1 и проверяем, есть ли совпадения в обратном словаре
+            foreach (var kvp1 in dict1)
+            {
+                // Если совпадений по значению нет, добавляем ключ из dict1 в результат
+                if (!reverseDict2.ContainsKey(kvp1.Value))
+                {
+                    result.Add(kvp1.Key);
+                }
+            }
+
+            // Также проверяем dict2 и добавляем ключи из dict2, которые не имеют совпадений в dict1
+            foreach (var kvp2 in dict2)
+            {
+                if (!dict1.ContainsValue(kvp2.Value))
+                {
+                    result.Add(kvp2.Key);
+                }
+            }
+
+            return result;
+        }
+
+
+        /*
         // Метод для сравнения двух списков после применения маски.
         private bool CompareValueLists(List<string> values1, List<string> values2)
         {
@@ -365,7 +505,7 @@ namespace LargeFamilyUSZNAddIn.classes
 
             return new string(value.Where(c => mask.Contains(c)).ToArray());
         }
-
+        */
         #endregion
     }
 }

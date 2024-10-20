@@ -1,4 +1,5 @@
-﻿using DocumentFormat.OpenXml.Office2021.DocumentTasks;
+﻿using ClosedXML.Excel;
+using DocumentFormat.OpenXml.Office2021.DocumentTasks;
 using LargeFamilyUSZNAddIn.classes;
 using System;
 using System.Collections.Generic;
@@ -136,19 +137,27 @@ namespace LargeFamilyUSZNAddIn.forms
             Dictionary<string, string> cellTextsA = new Dictionary<string, string>();
             Dictionary<string, string> cellTextsB = new Dictionary<string, string>();
             //выборка данных для сравнения
+            //Dictionary<string, XLWorkbook> workbook = we.LoadAllOpenWorkbooksDesk();
             cellTextsA = we.givenRangesDictionary(txtSamplingRangeOne.Text);
             cellTextsB = we.givenRangesDictionary(txtSamplingRangeTwo.Text);
             //обработка выбранных данных
-            Dictionary<string, List<string>> recognizedNumbersA = ds.FindNumbersByCustomPatternDictionary(cellTextsA, tbMaskSelection.Text);
-            Dictionary<string, List<string>> recognizedNumbersB = ds.FindNumbersByCustomPatternDictionary(cellTextsB, txMaskSearch.Text);
+            Dictionary<string, string> recognizedNumbersA = ds.FindNumbersByCustomPatternDictionary(cellTextsA, tbMaskSelection.Text);
+            Dictionary<string, string> recognizedNumbersB = ds.FindNumbersByCustomPatternDictionary(cellTextsB, txMaskSearch.Text);
+            List<string> resultСomparison = new List<string>();
             //Проверяем нужно менять даные перед сравнением
             if (tbtMaskСomparison.Text != string.Empty)
             {
                 Dictionary<string, string> transformedDictionary = ds.TransformByMaskDictionary(recognizedNumbersB, tbtMaskСomparison.Text);
+                //Сравнение данных
+                resultСomparison = ds.CompareDictionaries(recognizedNumbersA, transformedDictionary);
             }
+            else 
+            {
+                resultСomparison = ds.CompareDictionaries(recognizedNumbersA, recognizedNumbersB);
+            }
+            //окраска ячеек 
+            we.ColorCellsInPink(resultСomparison);
             
-            //Сравнение данных
-
         }
         #endregion
     }
