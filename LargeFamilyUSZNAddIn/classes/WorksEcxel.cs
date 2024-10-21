@@ -86,64 +86,7 @@ namespace LargeFamilyUSZNAddIn.classes
             }
         }
 
-       /* public Dictionary<string, XLWorkbook> LoadAllOpenWorkbooksDesk()
-        {
-            Dictionary<string, XLWorkbook> wbd = new Dictionary<string, XLWorkbook>();
-            Excel.Application excelApp;
-            Excel.Workbooks workbooks;
-
-            try
-            {
-                // Получаем текущий экземпляр приложения Excel
-                excelApp = Globals.ThisAddIn.Application;
-            }
-            catch (COMException)
-            {
-                MessageBox.Show("Excel не открыт");
-                return null;
-            }
-
-            // Получаем все открытые книги
-            workbooks = excelApp.Workbooks;
-
-            if (workbooks.Count == 0)
-            {
-                MessageBox.Show("Нет открытых книг Excel.");
-                return null; 
-            }
-
-            foreach (Excel.Workbook wb in workbooks)
-            {
-                try
-                {
-                    // Создаем временный файл
-                    string tempFilePath = Path.GetTempFileName();
-                    // Имя файла
-                    string fileName = wb.Name;
-                    // Сохраняем книгу во временный файл
-                    wb.SaveCopyAs(tempFilePath);
-
-                    // Открываем временный файл в ClosedXML
-                    using (var stream = new FileStream(tempFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                    {
-                        var workbook = new XLWorkbook(stream);
-
-                        // Добавляем загруженный workbook в список
-                        wbd.Add(fileName, workbook);
-                    }
-
-                    // Удаляем временный файл
-                    File.Delete(tempFilePath);
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Ошибка при обработке книги {wb.Name}: {ex.Message}");
-                    return null;
-                }
-            }
-            return wbd;
-        }
-       */
+       
 
         public string SelectRange()
         {
@@ -701,6 +644,25 @@ namespace LargeFamilyUSZNAddIn.classes
             return cellDataDict; // Возвращаем заполненный словарь
         }
 
+        /* 
+            Метод ColorCellsInPink выполняет окрашивание указанных ячеек в розовый цвет в открытых книгах Excel на основании переданного списка строк с информацией о ячейках.
+
+            1. Получает текущий экземпляр приложения Excel через `Globals.ThisAddIn.Application` и доступ ко всем открытым книгам Excel.
+
+            2. Для каждой строки в списке `cellInfoList` с помощью регулярного выражения извлекает:
+               - Имя файла (книги Excel),
+               - Имя листа,
+               - Адрес ячейки.
+
+            3. В цикле ищет книгу Excel по имени файла среди всех открытых книг. Если книга найдена, переходит к поиску указанного листа внутри этой книги.
+
+            4. Если указанный лист найден, метод извлекает диапазон ячеек на основе адреса ячейки и устанавливает для них розовый цвет с помощью свойства `Interior.Color`.
+
+            5. Если указанный файл или лист не найдены, выводятся сообщения об ошибке в консоль, чтобы уведомить пользователя о проблеме (например, если имя файла или листа указаны неверно).
+
+            6. Если формат строки не соответствует ожидаемому шаблону, метод выводит сообщение об ошибке, информируя пользователя о некорректных данных.
+       */
+
         public void ColorCellsInPink(List<string> cellInfoList)
         {
             Excel.Application excelApp;
@@ -773,147 +735,7 @@ namespace LargeFamilyUSZNAddIn.classes
             }
         }
 
-        // для удаления
-        public void ColorCellsInPink4(List<string> cellInfoList)
-        {
-            // Создаем объект приложения Excel
-            Excel.Application excelApp = (Excel.Application)System.Runtime.InteropServices.Marshal.GetActiveObject("Excel.Application");
-
-            // Регулярное выражение для извлечения данных: имя файла, имя листа, адрес ячейки
-            string pattern = @"\[(.*?)\]'(.*?)'([A-Z]+\d+)";
-            Regex regex = new Regex(pattern);
-
-            foreach (string cellInfo in cellInfoList)
-            {
-                Match match = regex.Match(cellInfo);
-
-                if (match.Success)
-                {
-                    // Извлекаем информацию из строки
-                    string fileName = match.Groups[1].Value;  // Имя файла
-                    string sheetName = match.Groups[2].Value; // Имя листа
-                    string cellAddress = match.Groups[3].Value; // Адрес ячейки
-
-                    // Ищем активную книгу Excel по имени файла
-                    foreach (Excel.Workbook workbook in excelApp.Workbooks)
-                    {
-                        if (workbook.Name == fileName)
-                        {
-                            // Ищем лист по имени
-                            Excel.Worksheet worksheet = null;
-                            foreach (Excel.Worksheet ws in workbook.Sheets)
-                            {
-                                if (ws.Name == sheetName)
-                                {
-                                    worksheet = ws;
-                                    break;
-                                }
-                            }
-
-                            if (worksheet != null)
-                            {
-                                // Окрашиваем ячейку в розовый цвет
-                                Excel.Range cell = worksheet.get_Range(cellAddress);
-                                cell.Interior.Color = Excel.XlRgbColor.rgbPink;
-                            }
-                            else
-                            {
-                                Console.WriteLine($"Ошибка: лист '{sheetName}' не найден в книге '{fileName}'.");
-                            }
-                            break;
-                        }
-                    }
-                }
-                else
-                {
-                    Console.WriteLine($"Ошибка: строка '{cellInfo}' не соответствует формату.");
-                }
-            }
-        }
-
-
-        public void ColorCellsInPink3(List<string> cellInfoList, Dictionary<string, XLWorkbook> wbd)
-        {
-            // Регулярное выражение для извлечения данных: имя файла, имя листа, адрес ячейки
-            string pattern = @"\[(.*?)\]'(.*?)'([A-Z]+\d+)";
-            Regex regex = new Regex(pattern);
-
-            foreach (string cellInfo in cellInfoList)
-            {
-                Match match = regex.Match(cellInfo);
-
-                if (match.Success)
-                {
-                    // Извлекаем информацию из строки
-                    string fileName = match.Groups[1].Value;  // Имя файла 
-                    string sheetName = match.Groups[2].Value; // Имя листа
-                    string cellAddress = match.Groups[3].Value; // Адрес ячейки
-
-                    // Проверяем, существует ли такая книга
-                    if (wbd.TryGetValue(fileName, out XLWorkbook workbook))
-                    {
-                        // Открываем лист по имени
-                        var worksheet = workbook.Worksheet(sheetName);
-
-                        if (worksheet != null)
-                        {
-                            // Окрашиваем ячейку в розовый цвет
-                            var cell = worksheet.Cell(cellAddress);
-                            cell.Style.Fill.BackgroundColor = XLColor.Pink;
-                        }
-                        else
-                        {
-                            Console.WriteLine($"Ошибка: лист '{sheetName}' не найден в книге '{fileName}'.");
-                        }
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Ошибка: книга '{fileName}' не найдена.");
-                    }
-                }
-                else
-                {
-                    Console.WriteLine($"Ошибка: строка '{cellInfo}' не соответствует формату.");
-                }
-            }
-        }
-
-
-        public void ColorCellsInPink2( List<string> cellInfoList,  Dictionary<string, XLWorkbook> wbd)
-        {
-            // Регулярное выражение для извлечения данных: имя файла, имя листа, адрес ячейки
-            string pattern = @"\[(.*?)\]'(.*?)'([A-Z]+\d+)";
-            Regex regex = new Regex(pattern);
-
-            foreach (string cellInfo in cellInfoList)
-            {
-                Match match = regex.Match(cellInfo);
-
-                if (match.Success)
-                {
-                    // Извлекаем информацию из строки
-                    //string fileName = match.Groups[1].Value;  // Имя файла
-                    string sheetName = match.Groups[2].Value; // Имя листа
-                    string cellAddress = match.Groups[3].Value; // Адрес ячейки
-                    foreach (KeyValuePair<string, XLWorkbook> workbook in wbd)
-                    {
-                        foreach (IXLWorksheet worksheet in workbook.Value.Worksheets)
-                        {
-                            // Открываем лист по имени
-                            if (worksheet.Name == sheetName)
-                            {
-                                if (worksheet != null)
-                                {
-                                    // Окрашиваем ячейку в розовый цвет
-                                    var cell = worksheet.Cell(cellAddress);
-                                    cell.Style.Fill.BackgroundColor = XLColor.Blue;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        
         #endregion
     }
 }
