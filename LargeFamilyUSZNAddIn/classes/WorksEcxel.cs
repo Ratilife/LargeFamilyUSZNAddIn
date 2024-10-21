@@ -19,7 +19,7 @@ namespace LargeFamilyUSZNAddIn.classes
 {
     internal class WorksEcxel
     {
-        private IXLWorkbook workbook;
+        //private IXLWorkbook workbook;
         private // Создаем список для хранения загруженных книг
         Dictionary <string, XLWorkbook> workbooksDictionary = new Dictionary<string, XLWorkbook>();
 
@@ -81,7 +81,7 @@ namespace LargeFamilyUSZNAddIn.classes
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Ошибка при обработке книги {wb.Name}: {ex.Message}");
+                    //MessageBox.Show($"Ошибка при обработке книги {wb.Name}: {ex.Message}");
                 }
             }
         }
@@ -702,6 +702,79 @@ namespace LargeFamilyUSZNAddIn.classes
         }
 
         public void ColorCellsInPink(List<string> cellInfoList)
+        {
+            Excel.Application excelApp;
+            Excel.Workbooks workbooks;
+            
+            // Получаем текущий экземпляр приложения Excel
+            excelApp = Globals.ThisAddIn.Application;
+            // Получаем все открытые книги
+            workbooks = excelApp.Workbooks;
+            // Регулярное выражение для извлечения данных: имя файла, имя листа, адрес ячейки
+            string pattern = @"\[(.*?)\]'(.*?)'([A-Z]+\d+)";
+            Regex regex = new Regex(pattern);
+
+            foreach (string cellInfo in cellInfoList)
+            {
+                Match match = regex.Match(cellInfo);
+
+                if (match.Success)
+                {
+                    // Извлекаем информацию из строки
+                    string fileName = match.Groups[1].Value;  // Имя файла
+                    string sheetName = match.Groups[2].Value; // Имя листа
+                    string cellAddress = match.Groups[3].Value; // Адрес ячейки
+
+                    // Ищем открытую книгу Excel по имени файла
+                    Excel.Workbook targetWorkbook = null;
+                    foreach (Excel.Workbook workbook in workbooks)
+                    {
+                        // Проверяем имя книги
+                        if (workbook.Name == fileName)
+                        {
+                            targetWorkbook = workbook;
+                            break;
+                        }
+                    }
+
+                    if (targetWorkbook != null)
+                    {
+                        // Ищем лист по имени
+                        Excel.Worksheet worksheet = null;
+                        foreach (Excel.Worksheet ws in targetWorkbook.Sheets)
+                        {
+                            if (ws.Name == sheetName)
+                            {
+                                worksheet = ws;
+                                break;
+                            }
+                        }
+
+                        if (worksheet != null)
+                        {
+                            // Окрашиваем ячейку в розовый цвет
+                            Excel.Range cell = worksheet.get_Range(cellAddress);
+                            cell.Interior.Color = Excel.XlRgbColor.rgbPink;
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Ошибка: лист '{sheetName}' не найден в книге '{fileName}'.");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Ошибка: книга '{fileName}' не найдена среди открытых.");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"Ошибка: строка '{cellInfo}' не соответствует формату.");
+                }
+            }
+        }
+
+        // для удаления
+        public void ColorCellsInPink4(List<string> cellInfoList)
         {
             // Создаем объект приложения Excel
             Excel.Application excelApp = (Excel.Application)System.Runtime.InteropServices.Marshal.GetActiveObject("Excel.Application");

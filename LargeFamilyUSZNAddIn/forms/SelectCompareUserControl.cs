@@ -25,6 +25,15 @@ namespace LargeFamilyUSZNAddIn.forms
             btFIO.Enabled = false;  // Убрать, когда будет прописан функционал
             // установить значение по умолчанию
             cbTypeSelection.SelectedItem = cbTypeSelection.Items[0];
+
+            //сделать невидемым
+            tbСommentСell.Visible = false;
+            butСommentСell.Visible=false;
+            labSeparator.Visible = false;
+            tbSeparator.Visible = false;
+            butCompareForDifference.Visible = false;
+            butOpenForm.Visible= false;
+
         }
 
         #region ВыборкаДиапазон

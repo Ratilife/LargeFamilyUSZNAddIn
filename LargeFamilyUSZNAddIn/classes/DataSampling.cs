@@ -305,7 +305,7 @@ namespace LargeFamilyUSZNAddIn.classes
             return result;
         }
 
-        //совпадение
+        /*//совпадение
         public List<string> CompareDictionaries(Dictionary<string, string> dict1, Dictionary<string, string> dict2)
         {
             List<string> result = new List<string>();
@@ -339,9 +339,9 @@ namespace LargeFamilyUSZNAddIn.classes
 
             return result;
         }
+        */
 
-
-        /* на случай если работающий метод не работает правельно заменить
+        //на случай если работающий метод не работает правельно заменить
         public List<string> CompareDictionaries(Dictionary<string, string> dict1, Dictionary<string, string> dict2)
         {
             List<string> result = new List<string>();
@@ -362,7 +362,7 @@ namespace LargeFamilyUSZNAddIn.classes
 
             return result;
         }
-
+        /*
         public List<string> CompareDictionaries(Dictionary<string, string> dict1, Dictionary<string, string> dict2)
         {
             List<string> result = new List<string>();
@@ -404,7 +404,7 @@ namespace LargeFamilyUSZNAddIn.classes
             return result;
             }
 
-        */
+       */
 
         // Основной метод, который сравнивает два словаря по маске и возвращает список ключей с совпадающими значениями.
         public List<string> CompareDictionaries2(Dictionary<string, string> dict1, Dictionary<string, string> dict2, string mask)
